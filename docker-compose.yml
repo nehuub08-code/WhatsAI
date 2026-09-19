@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: whatsai-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: whatsai_user
+      POSTGRES_PASSWORD: whatsai_password
+      POSTGRES_DB: whatsai_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U whatsai_user -d whatsai_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: whatsai-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://whatsai_user:whatsai_password@db:5432/whatsai_db
+      JWT_SECRET: ${JWT_SECRET:-whatsai_prod_jwt_super_secret_key_32bytesmin}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      META_ACCESS_TOKEN: ${META_ACCESS_TOKEN}
+      META_PHONE_NUMBER_ID: ${META_PHONE_NUMBER_ID}
+      META_VERIFY_TOKEN: ${META_VERIFY_TOKEN:-whatsai_secure_verify_token_2026}
+      META_APP_SECRET: ${META_APP_SECRET}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # React Frontend (Nginx)
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: whatsai-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
