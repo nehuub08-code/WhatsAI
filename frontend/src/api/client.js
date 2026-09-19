@@ -5,7 +5,7 @@ const getBaseUrl = () => {
     const saved = localStorage.getItem('whatsai_api_url');
     if (saved) return saved;
     if (window.location.hostname.includes('github.io')) {
-      return 'https://exjvd-103-68-11-123.free.pinggy.net';
+      return 'https://ktrtl-103-68-11-123.run.pinggy-free.link';
     }
   }
   return import.meta.env.VITE_API_URL || '';
@@ -19,9 +19,10 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to attach JWT token
+// Request interceptor to attach JWT token and ensure baseURL is fresh
 api.interceptors.request.use(
   (config) => {
+    config.baseURL = getBaseUrl();
     const token = localStorage.getItem('whatsai_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -36,10 +37,10 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      if (!window.location.pathname.includes('/login')) {
+      if (!window.location.hash.includes('login') && !window.location.pathname.includes('/login')) {
         localStorage.removeItem('whatsai_token');
         localStorage.removeItem('whatsai_admin');
-        window.location.href = '/login';
+        window.location.hash = '#/login';
       }
     }
     return Promise.reject(error);
