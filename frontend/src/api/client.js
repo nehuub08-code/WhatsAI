@@ -16,13 +16,17 @@ const api = axios.create({
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
+    'X-Pinggy-No-Screen': 'true',
+    'bypass-tunnel-reminder': 'true',
   },
 });
 
-// Request interceptor to attach JWT token and ensure baseURL is fresh
+// Request interceptor to attach JWT token and ensure baseURL and bypass headers are fresh
 api.interceptors.request.use(
   (config) => {
     config.baseURL = getBaseUrl();
+    config.headers['X-Pinggy-No-Screen'] = 'true';
+    config.headers['bypass-tunnel-reminder'] = 'true';
     const token = localStorage.getItem('whatsai_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
