@@ -17,7 +17,6 @@ from app.security import get_current_admin
 
 router = APIRouter(tags=["Analytics"])
 
-@router.get("/analytics", response_model=AnalyticsResponse)
 @router.get("/api/analytics", response_model=AnalyticsResponse)
 def get_analytics_data(
     db: Session = Depends(get_db),

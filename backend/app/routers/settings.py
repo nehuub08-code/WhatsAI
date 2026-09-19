@@ -21,7 +21,6 @@ def upsert_setting(db: Session, key: str, value: str, description: str = ""):
         record.updated_at = datetime.utcnow()
     db.commit()
 
-@router.get("/settings", response_model=SystemSettingsOut)
 @router.get("/api/settings", response_model=SystemSettingsOut)
 def get_system_settings(
     db: Session = Depends(get_db),
@@ -82,7 +81,6 @@ def get_system_settings(
         webhook_url=webhook_url
     )
 
-@router.put("/settings", response_model=SystemSettingsOut)
 @router.put("/api/settings", response_model=SystemSettingsOut)
 def update_system_settings(
     request: Request,

@@ -1,9 +1,11 @@
+import os
 import time
 import logging
 from datetime import datetime, timedelta
 from fastapi import FastAPI, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import engine, Base, SessionLocal
@@ -87,6 +89,13 @@ app.include_router(audit_logs_router)
 app.include_router(export_router)
 app.include_router(simulator_router)
 
+# Mount Frontend Production Build if available
+FRONTEND_DIST = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist"))
+if os.path.exists(FRONTEND_DIST):
+    assets_dir = os.path.join(FRONTEND_DIST, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="frontend-assets")
+
 @app.get("/api/health")
 def health_check():
     """Health check endpoint for container and uptime monitoring"""
@@ -96,6 +105,19 @@ def health_check():
         "environment": settings.ENVIRONMENT,
         "timestamp": datetime.utcnow().isoformat()
     }
+
+# SPA Client-Side Routing Fallback (Must be registered after API routes)
+if os.path.exists(FRONTEND_DIST):
+    @app.get("/{full_path:path}")
+    async def serve_spa_app(full_path: str):
+        # Do not intercept API, webhook, or docs endpoints
+        if full_path.startswith("api") or full_path.startswith("webhook") or full_path.startswith("docs") or full_path.startswith("redoc") or full_path.startswith("openapi.json"):
+            return Response(content="Not Found", status_code=404)
+
+        target_file = os.path.join(FRONTEND_DIST, full_path)
+        if full_path and os.path.isfile(target_file):
+            return FileResponse(target_file)
+        return FileResponse(os.path.join(FRONTEND_DIST, "index.html"))
 
 def seed_initial_data(db: Session):
     """Seed initial admin, default settings, and sample conversations if empty"""

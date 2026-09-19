@@ -1,7 +1,18 @@
 import axios from 'axios';
 
+const getBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('whatsai_api_url');
+    if (saved) return saved;
+    if (window.location.hostname.includes('github.io')) {
+      return 'https://exjvd-103-68-11-123.free.pinggy.net';
+    }
+  }
+  return import.meta.env.VITE_API_URL || '';
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '',
+  baseURL: getBaseUrl(),
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',

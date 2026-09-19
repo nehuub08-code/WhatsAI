@@ -17,7 +17,6 @@ from app.services.gemini_service import get_setting_value
 
 router = APIRouter(tags=["Dashboard"])
 
-@router.get("/dashboard", response_model=DashboardResponse)
 @router.get("/api/dashboard", response_model=DashboardResponse)
 def get_dashboard_data(
     db: Session = Depends(get_db),
